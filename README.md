@@ -1,5 +1,7 @@
 # Telegram-бот приёма заявок + Google Sheets
 
+<p align="center"><img src="docs/demo.gif" width="320" alt="Демо: заявка с фото и смена статуса"></p>
+
 aiogram 3 · SQLite (aiosqlite) · gspread · Docker
 
 ## Возможности
