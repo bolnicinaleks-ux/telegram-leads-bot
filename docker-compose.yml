@@ -1,0 +1,10 @@
+services:
+  bot:
+    build: .
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./form.toml:/app/form.toml:ro
+      # Раскомментируйте, если включаете Google Sheets:
+      # - ./credentials.json:/app/credentials.json:ro
+    restart: unless-stopped

@@ -1,0 +1,59 @@
+# Анкета заявки. Меняется без правки кода — после изменения перезапустите бота.
+#
+# Типы вопросов:
+#   text   — текст (min_length, max_length)
+#   phone  — телефон кнопкой «Отправить мой номер» или текстом
+#   choice — выбор из кнопок (options)
+#   number — число (min, max)
+#   file   — фото или документ
+# required = false — вопрос можно пропустить.
+# key — уникальный идентификатор (не меняйте у существующих вопросов), label — заголовок колонки в таблице.
+
+title = "Заявка на ремонт"
+intro = "Ответьте на несколько вопросов — это займёт около минуты."
+done = "Спасибо! Мы свяжемся с вами в ближайшее время."
+
+[[questions]]
+key = "name"
+type = "text"
+label = "Имя"
+text = "Как к вам обращаться?"
+min_length = 2
+max_length = 50
+
+[[questions]]
+key = "phone"
+type = "phone"
+label = "Телефон"
+text = "Ваш номер телефона — кнопкой ниже или текстом:"
+
+[[questions]]
+key = "service"
+type = "choice"
+label = "Услуга"
+text = "Что нужно сделать?"
+options = ["Ремонт квартиры", "Сантехника", "Электрика", "Другое"]
+
+[[questions]]
+key = "area"
+type = "number"
+label = "Площадь, м²"
+text = "Площадь помещения, м²?"
+min = 1
+max = 10000
+required = false
+
+[[questions]]
+key = "photo"
+type = "file"
+label = "Фото"
+text = "Пришлите фото объекта или документ."
+required = false
+
+[[questions]]
+key = "comment"
+type = "text"
+label = "Комментарий"
+text = "Опишите задачу подробнее."
+max_length = 1000
+required = false
