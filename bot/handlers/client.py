@@ -10,13 +10,18 @@ from bot import keyboards as kb
 from bot.answers import parse_answer
 from bot.config import Config
 from bot.db import Database
-from bot.delivery import deliver_lead
+from bot.delivery import deliver_lead, send_card
 from bot.form import Form
 from bot.states import LeadForm
 from bot.sync import SheetSync
 from bot.utils import answers_text, lead_short, now_local
 
 router = Router(name="client")
+
+DEMO_NOTE = (
+    "\n\n🧪 <b>Это демо-бот.</b> После отправки вы получите копию карточки, "
+    "которую видит владелец, и сможете сами менять статус заявки."
+)
 
 
 async def _ask(message: Message, state: FSMContext, form: Form, idx: int) -> None:
@@ -48,11 +53,12 @@ async def _limit_reached(db: Database, cfg: Config, user_id: int) -> bool:
 # --- Меню ---
 
 @router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext, form: Form) -> None:
+async def cmd_start(message: Message, state: FSMContext, form: Form, cfg: Config) -> None:
     await state.clear()
     intro = f"\n\n{escape(form.intro)}" if form.intro else ""
     await message.answer(
-        f"Здравствуйте! Здесь можно оставить заявку: <b>{escape(form.title)}</b>.{intro}",
+        f"Здравствуйте! Здесь можно оставить заявку: <b>{escape(form.title)}</b>.{intro}"
+        + (DEMO_NOTE if cfg.demo_mode else ""),
         reply_markup=kb.main_menu(),
     )
 
@@ -154,8 +160,12 @@ async def send_lead(
     )
     await cb.answer()
 
-    await deliver_lead(bot, db, form, await db.get_lead(lead_id), cfg.lead_targets)
+    lead = await db.get_lead(lead_id)
+    await deliver_lead(bot, db, form, lead, cfg.lead_targets)
     sync.poke()
+    if cfg.demo_mode and user.id not in cfg.lead_targets:
+        await cb.message.answer("👀 <b>Так заявку увидит владелец</b> — кнопки статуса работают:")
+        await send_card(bot, db, form, lead, user.id)
 
 
 @router.callback_query(LeadForm.confirm, kb.ConfirmCb.filter(F.action == "restart"))

@@ -86,7 +86,9 @@ async def change_status(
     cb: CallbackQuery, callback_data: kb.LeadCb, db: Database, cfg: Config, form: Form, bot: Bot, sync: SheetSync
 ) -> None:
     in_leads_chat = cfg.leads_chat_id is not None and cb.message is not None and cb.message.chat.id == cfg.leads_chat_id
-    if cb.from_user.id not in cfg.admin_ids and not in_leads_chat:
+    lead = await db.get_lead(callback_data.id)
+    own_demo = cfg.demo_mode and lead is not None and lead["user_id"] == cb.from_user.id
+    if cb.from_user.id not in cfg.admin_ids and not in_leads_chat and not own_demo:
         await cb.answer("Нет доступа", show_alert=True)
         return
     status = callback_data.status

@@ -5,6 +5,7 @@
 """
 import asyncio
 import csv
+import dataclasses
 import io
 import itertools
 import os
@@ -321,6 +322,33 @@ async def run_scenario(cfg: Config, db: Database) -> None:
     await feed(press(CLIENT2, "cf:send"))
     assert "устарела" in session.alerts()[-1]
     print("✔ устаревшие кнопки")
+
+    # 10. Демо-режим: клиент получает копию карточки владельца и меняет статус только своей заявки
+    demo = dataclasses.replace(cfg, demo_mode=True)
+    dfeed = lambda upd: dp.feed_update(bot, upd, cfg=demo)  # noqa: E731
+    await dfeed(msg(CLIENT2, "/start"))
+    assert "демо-бот" in session.last_text(CLIENT2)
+    await dfeed(msg(CLIENT2, "/new"))
+    for text in ("Ольга", "+7 701 555 44 33", "Электрика", "⏭ Пропустить", "⏭ Пропустить", "⏭ Пропустить"):
+        await dfeed(msg(CLIENT2, text))
+    await dfeed(press(CLIENT2, "cf:send"))
+    demo_id = (await db.all_leads())[-1]["id"]
+    copy = session.of(SendMessage, chat_id=CLIENT2)[-1]
+    assert f"Заявка #{demo_id}" in copy.text and copy.reply_markup.inline_keyboard
+    assert any("увидит владелец" in m.text for m in session.of(SendMessage, chat_id=CLIENT2)[-3:])
+    await feed(press(CLIENT2, f"ld:{demo_id}:work"))
+    assert session.alerts()[-1] == "Нет доступа"  # без демо-режима
+    await dfeed(press(STRANGER, f"ld:{demo_id}:work"))
+    assert session.alerts()[-1] == "Нет доступа"  # чужая заявка
+    await dfeed(press(CLIENT2, f"ld:1:reject"))
+    assert session.alerts()[-1] == "Нет доступа"
+    await dfeed(press(CLIENT2, f"ld:{demo_id}:work"))
+    assert (await db.get_lead(demo_id))["status"] == "work"
+    assert "взята в работу" in session.last_text(CLIENT2)
+    assert len(await db.lead_messages(demo_id)) == 2  # карточка админа и копия клиента обновляются обе
+    await dfeed(msg(CLIENT2, "/leads"))
+    assert "Подробнее" not in session.last_text(CLIENT2)
+    print("✔ демо-режим: копия карточки владельца, статус только своей заявки")
 
 
 if __name__ == "__main__":

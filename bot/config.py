@@ -22,6 +22,7 @@ class Config:
     google_sheet_id: str
     google_worksheet: str
     sync_interval: int
+    demo_mode: bool = False
 
     @property
     def sheets_enabled(self) -> bool:
@@ -52,6 +53,7 @@ def load_config() -> Config:
         google_sheet_id=os.getenv("GOOGLE_SHEET_ID", "").strip(),
         google_worksheet=os.getenv("GOOGLE_WORKSHEET", "Заявки"),
         sync_interval=int(os.getenv("SYNC_INTERVAL_SECONDS", "60")),
+        demo_mode=os.getenv("DEMO_MODE", "0").strip().lower() in ("1", "true", "yes"),
     )
     if not cfg.lead_targets:
         raise RuntimeError("Задайте ADMIN_IDS или LEADS_CHAT_ID — иначе заявки некуда отправлять")
